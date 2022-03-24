@@ -1,0 +1,96 @@
+
+************[win10] command
+
+wsl --import Ubuntu-18.04-a5000   .\Ubuntu-18.04-a5000  D:\wsl_images\Ubuntu-18.04-a5000.tar --version 2
+
+wsl -d Ubuntu-18.04-a5000 -u nvidia
+
+# install ssh https://www.jianshu.com/p/0a102c4bb3a2
+************[wsl-IMT_Server] shell
+
+sudo passwd root
+
+sudo su
+
+dpkg -l | grep ssh
+
+service ssh status
+
+cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
+
+vim /etc/ssh/sshd_config
+
+	Port 23
+	#AddressFamily any
+	ListenAddress 0.0.0.0
+
+	PermitRootLogin yes
+	
+	PasswordAuthentication yes
+
+service ssh start
+#如果提示sshd error: could not load host key，则用下面的命令重新生成
+dpkg-reconfigure openssh-server
+#执行上述命令后,会有提示选择,直接按确认即可
+
+exit
+logout
+
+************[win10] command
+
+ssh -p 23 root@127.0.0.1
+yes
+>>> [C:\Users\User\.ssh]
+
+************[wsl-IMT_Server] shell
+vim /etc/init.wsl
+
+#! /bin/sh
+/etc/init.d/ssh $1
+
+chmod +x /etc/init.wsl
+
+# 先添加写权限
+sudo chmod u+w /etc/sudoers
+vim /etc/sudoers
+# 在文件里添加一行, 可以在%sudo   ALL=(ALL:ALL) ALL下面加.
+%sudo   ALL=NOPASSWD: /etc/init.wsl
+# 保存后恢复文件权限
+sudo chmod u-w /etc/sudoers
+
+logout
+
+# Use ssh no password https://blog.longwin.com.tw/2005/12/ssh_keygen_no_passwd/
+[win10] command 
+ssh-keygen -t rsa -C nvidia@127.0.0.1
+
+Copy local ~/.ssh/id_rsa.pub to wsl-IMT_Server ~/.ssh/id_rsa.pub
+
+wsl -d Ubuntu-18.04-a5000 -u nvidia
+[wsl-IMT_Server] shell 
+sudo chown nvidia:nvidia ~/.ssh
+cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+
+vi ~\IMT_Trainer\shell\AUO_TRAIN
+[Line 2 add] Very important! ssh can't run .bashrc script >>> export PATH="$HOME/darknet:$PATH"
+export PATH="$HOME/darknet:$PATH"
+
+logout
+
+
+
+************[wsl-IMT_Server] shell for IMT_Trainer.bat 
+# Use wsl command to start app service
+[win10] command 
+wsl -d Ubuntu-18.04-a5000 -u root sudo /etc/init.wsl start
+wsl -d Ubuntu-18.04-a5000 -u root sudo umount /mnt/d
+wsl -d Ubuntu-18.04-a5000 -u root sudo mount -t drvfs D: /mnt/d -o metadata,uid=1000,gid=1000,umask=22,fmask=111
+
+ssh -p23 nvidia@127.0.0.1 /home/nvidia/IMT_Trainer/shell/AUO_TRAIN -start
+ssh -p23 nvidia@127.0.0.1 /home/nvidia/IMT_Trainer/shell/AUO_TEST -start
+
+
+[win10] Win+R
+shell:startup
+
+add IMT_Trainer.bat
